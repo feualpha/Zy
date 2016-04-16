@@ -12,6 +12,8 @@ import (
 	"log"
 	"path/filepath"
 	"text/template"
+  "github.com/gorilla/mux"
+  "github.com/abbot/go-http-auth"
 )
 
 var (
@@ -19,6 +21,14 @@ var (
 	assets    = flag.String("assets", defaultAssetPath(), "path to assets")
 	homeTempl *template.Template
 )
+
+func Secret(user, realm string) string {
+  if user == "john" {
+    // password is "hello"
+    return "$1$dlPL2MqE$oQmn16q49SqdmhenQuNgs1"
+    }
+  return ""
+}
 
 func defaultAssetPath() string {
 	p, err := build.Default.Import("github.com/gary.burd.info/go-websocket-chat", "", build.FindOnly)
@@ -37,9 +47,17 @@ func main() {
 	homeTempl = template.Must(template.ParseFiles(filepath.Join(*assets, "home.html")))
 	h := newHub()
 	go h.run()
-	http.HandleFunc("/", homeHandler)
-	http.Handle("/ws", wsHandler{h: h, race:false})
-  http.Handle("/wsc", wsHandler{h: h, race:true})
+  /////////////
+  r := mux.NewRouter()
+
+  r.HandleFunc("/", homeHandler)
+  r.Handle("/ws", wsHandler{h: h, race:false})
+  r.Handle("/wsc", wsHandler{h: h, race:true})
+  http.Handle("/", httpauth.SimpleBasicAuth("dave", "somepassword")(r))
+  ////////////////
+	//http.HandleFunc("/", homeHandler)
+	//http.Handle("/ws", wsHandler{h: h, race:false})
+  //http.Handle("/wsc", wsHandler{h: h, race:true})
 	if err := http.ListenAndServe(*addr, nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
