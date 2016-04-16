@@ -6,14 +6,18 @@
 package main
 
 import (
+  "crypto/md5"
+  "database/sql"
+  "encoding/hex"
+  "flag"
+  "github.com/goji/httpauth"
+  "github.com/gorilla/mux"
+  _"github.com/mattn/go-sqlite3"
+  "go/build"
+  "log"
   "net/http"
-	"flag"
-	"go/build"
-	"log"
 	"path/filepath"
 	"text/template"
-  "github.com/gorilla/mux"
-  "github.com/abbot/go-http-auth"
 )
 
 var (
@@ -22,20 +26,38 @@ var (
 	homeTempl *template.Template
 )
 
-func Secret(user, realm string) string {
-  if user == "john" {
-    // password is "hello"
-    return "$1$dlPL2MqE$oQmn16q49SqdmhenQuNgs1"
-    }
-  return ""
-}
-
 func defaultAssetPath() string {
 	p, err := build.Default.Import("github.com/gary.burd.info/go-websocket-chat", "", build.FindOnly)
 	if err != nil {
 		return "."
 	}
 	return p.Dir
+}
+
+func myAuthFunc(username, password string) bool {
+  db, err := sql.Open("sqlite3", "./foo.db")
+  if err != nil {
+    log.Fatal("error 201")
+  }
+  defer db.Close()
+
+  query, err := db.Prepare("select password from foo where username = ?")
+  if err != nil {
+		log.Fatal("error 202")
+	}
+	defer query.Close()
+
+  var q_password string
+  err = query.QueryRow(username).Scan(&q_password)
+	if err != nil {
+    return false
+	}
+
+  hasher := md5.New()
+  hasher.Write([]byte(password))
+  hashed_pass := hex.EncodeToString(hasher.Sum(nil))  
+
+  return q_password == hashed_pass
 }
 
 func homeHandler(c http.ResponseWriter, req *http.Request) {
@@ -47,17 +69,15 @@ func main() {
 	homeTempl = template.Must(template.ParseFiles(filepath.Join(*assets, "home.html")))
 	h := newHub()
 	go h.run()
-  /////////////
-  r := mux.NewRouter()
 
+  authOpts := httpauth.AuthOptions{ AuthFunc: myAuthFunc }
+
+  r := mux.NewRouter()
   r.HandleFunc("/", homeHandler)
   r.Handle("/ws", wsHandler{h: h, race:false})
   r.Handle("/wsc", wsHandler{h: h, race:true})
-  http.Handle("/", httpauth.SimpleBasicAuth("dave", "somepassword")(r))
-  ////////////////
-	//http.HandleFunc("/", homeHandler)
-	//http.Handle("/ws", wsHandler{h: h, race:false})
-  //http.Handle("/wsc", wsHandler{h: h, race:true})
+  http.Handle("/", httpauth.BasicAuth(authOpts)(r))
+
 	if err := http.ListenAndServe(*addr, nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
