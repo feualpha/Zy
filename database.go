@@ -6,6 +6,9 @@ import (
   "log"
 )
 
+const query_select string = "select password from foo where username = ?"
+const query_insert string = "INSERT INTO foo(username, password) values(?, ?)"
+
 func openDb() *sql.DB {
   db, err := sql.Open("sqlite3", "./foo.db")
   if err != nil {
@@ -21,7 +24,7 @@ func dbAuth(username string) string {
   db := openDb()
   defer db.Close()
 
-  query, err := db.Prepare("select password from foo where username = ?")
+  query, err := db.Prepare(query_select)
   if err != nil {
     log.Fatal("error 202")
   }
@@ -36,7 +39,7 @@ func dbRegister(username, password string) error {
   db := openDb()
   defer db.Close()
 
-  query, err := db.Prepare("INSERT INTO foo(username, password) values(?, ?)")
+  query, err := db.Prepare(query_insert)
   if err != nil {
     log.Fatal("error 202")
   }
@@ -45,4 +48,23 @@ func dbRegister(username, password string) error {
   _, err = query.Exec(username, password)
 
   return err
+}
+
+func checkUniqueness(username string) bool {
+  db := openDb()
+  defer db.Close()
+
+  query, err := db.Prepare(query_select)
+  if err != nil {
+    log.Fatal("error 202")
+  }
+  defer query.Close()
+
+  temp := ""
+  err = query.QueryRow(username).Scan(&temp)
+  if err != nil{
+    return true
+  }
+
+  return false
 }
