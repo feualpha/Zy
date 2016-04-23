@@ -5,10 +5,10 @@
 package main
 
 import (
-  //"encoding/json"
+  "encoding/base64"
   "github.com/gorilla/websocket"
   "net/http"
-  //"log"
+  "strings"
 )
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
@@ -21,6 +21,7 @@ type connection struct {
 	ws   *websocket.Conn
 	send chan []byte
 	h    *hub
+  name string
 }
 
 func (c *connection) reader() {
@@ -58,14 +59,25 @@ func get_room(s *switcher,id string) *hub{
   return room
 }
 
+func get_username(auth_header string) string {
+  encoded :=  strings.Split(auth_header, " ")
+  decoded,_ := base64.StdEncoding.DecodeString(encoded[1])
+  n := len(decoded)
+  userpass := string(decoded[:n])
+  username := strings.Split(userpass, ":")
+
+  return username[0]
+}
+
 func (wsh wsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
-
+  name := get_username(r.Header.Get("Authorization"))
   room := get_room(wsh.s, r.Header.Get("X-Room"))
-	c := &connection{send: make(chan []byte, 256), ws: ws, h: room}
+
+	c := &connection{send: make(chan []byte, 256), ws: ws, h: room, name: name}
 	c.h.register <- c
 	defer func() { c.h.unregister <- c }()
 

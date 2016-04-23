@@ -4,6 +4,8 @@
 
 package main
 
+import "fmt"
+
 type mesg struct {
 	body []byte
 	id *connection
@@ -40,6 +42,11 @@ func will_self_destroy(count int, special bool) bool {
 	return !((count==0) || special)
 }
 
+func message_composer(name string, body []byte) []byte {
+	message := fmt.Sprintf("%s: %s", name, string(body))
+	return []byte(message)
+}
+
 func (h *hub) run(name string ,clear chan string) {
 	live := true
 	for live {
@@ -56,8 +63,11 @@ func (h *hub) run(name string ,clear chan string) {
 				if v && (c == m.id) {
 					continue
 				}
+
+				message := message_composer(m.id.name, m.body)
+
 				select {
-				case c.send <- m.body:
+				case c.send <- message:
 				default:
 					delete(h.connections, c)
 					close(c.send)
