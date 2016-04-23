@@ -9,16 +9,14 @@ import (
   "flag"
   "github.com/goji/httpauth"
   "github.com/gorilla/mux"
+  "github.com/subosito/gotenv"
   "go/build"
   "log"
   "net/http"
-	"text/template"
 )
 
 var (
-	addr      = flag.String("addr", ":8080", "server address")
-	assets    = flag.String("assets", defaultAssetPath(), "path to assets")
-	homeTempl *template.Template
+	port = flag.String("port", ":8080", "port")
 )
 
 func encryptPass(password string) string {
@@ -43,6 +41,7 @@ func myAuthFunc(username, password string) bool {
 }
 
 func main() {
+  gotenv.Load()
 	flag.Parse()
   dbInit()
   swtch := newSwitcher();
@@ -55,7 +54,7 @@ func main() {
   http.Handle("/", httpauth.BasicAuth(authOpts)(r))
   http.HandleFunc("/cregister", registerHandler)
 
-	if err := http.ListenAndServe(*addr, nil); err != nil {
+	if err := http.ListenAndServe(*port, nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
 }

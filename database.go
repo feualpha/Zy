@@ -2,15 +2,16 @@ package main
 
 import (
   "database/sql"
-  _"github.com/mattn/go-sqlite3"
   "log"
+  _"github.com/mattn/go-sqlite3"
+  "os"
 )
 
 const query_select string = "select password from users where username = ?"
 const query_insert string = "INSERT INTO users(username, password) values(?, ?)"
 
 func openDb() *sql.DB {
-  db, err := sql.Open("sqlite3", "./foo.db")
+  db, err := sql.Open("sqlite3", os.Getenv("DB_NAME"))
   if err != nil {
     log.Fatal("error 201")
   }
