@@ -44,6 +44,7 @@ func myAuthFunc(username, password string) bool {
 
 func main() {
 	flag.Parse()
+  dbInit()
   swtch := newSwitcher();
   go swtch.run()
 
