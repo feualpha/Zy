@@ -19,6 +19,7 @@ type hub struct {
 	broadcast   chan *mesg
 	register    chan *client
 	unregister  chan *connection
+	live        chan bool
 }
 
 func newHub() *hub {
@@ -27,11 +28,13 @@ func newHub() *hub {
 		register:    make(chan *client),
 		unregister:  make(chan *connection),
 		connections: make(map[*connection]bool),
+		live: make(chan bool),
 	}
 }
 
 func (h *hub) run() {
-	for {
+	live := true
+	for live {
 		select {
 		case c := <-h.register:
 			h.connections[c.id] = c.race
@@ -52,6 +55,9 @@ func (h *hub) run() {
 					close(c.send)
 				}
 			}
+		case l := <-h.live:
+			// close connection?
+			live = l
 		}
 	}
 }
