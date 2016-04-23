@@ -5,8 +5,10 @@
 package main
 
 import (
+  //"encoding/json"
   "github.com/gorilla/websocket"
   "net/http"
+  //"log"
 )
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
@@ -43,11 +45,11 @@ func (c *connection) writer() {
 	c.ws.Close()
 }
 
-func wait_room(s *switcher) *hub{
-  y := newSwitchAgent("hai")
+func get_room(s *switcher,id string) *hub{
+  y := newSwitchAgent(id)
   var room *hub
-  s.join <- *y
 
+  s.join <- *y
   select {
   case h := <- y.room:
     room = h
@@ -63,7 +65,7 @@ func (wsh wsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-  room := wait_room(wsh.s)
+  room := get_room(wsh.s, r.Header.Get("X-Room"))
 	c := &connection{send: make(chan []byte, 256), ws: ws, h: room}
 	c.h.register <- &client{id: c, race: wsh.race}
 	defer func() { c.h.unregister <- c }()

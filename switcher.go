@@ -32,6 +32,13 @@ func newSwitcher() *switcher {
 	}
 }
 
+func create_new_room(c *switch_agent, s *switcher){
+  new_hub := newHub(false)
+  s.rooms[c.id] = new_hub
+  go new_hub.run(c.id, s.clear)
+  c.room <- new_hub
+}
+
 func (s *switcher) run() {
   d_name := "default"
   first := newHub(true)
@@ -44,13 +51,8 @@ func (s *switcher) run() {
       if ok {
         c.room <- hub
       } else {
-        c.room <-s.rooms["default"]
+        create_new_room(&c, s)
       }
-    case c := <-s.create:
-      new_hub := newHub(false)
-      s.rooms[c.id] = new_hub
-      go new_hub.run(d_name, s.clear)
-      c.room <- new_hub
     case key := <-s.clear:
       hub := s.rooms[key]
       hub.live <- false

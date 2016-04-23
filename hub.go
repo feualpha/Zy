@@ -3,7 +3,6 @@
 // license that can be found in the LICENSE file.
 
 package main
-import "log"
 
 type mesg struct {
 	body []byte
@@ -53,7 +52,6 @@ func (h *hub) run(name string ,clear chan string) {
 		case c := <-h.register:
 			h.connections[c.id] = c.race
 		case c := <-h.unregister:
-			log.Println("unregistering")
 			unregister(h, c)
 			if will_self_destroy(len(h.connections), h.special){
 				clear <-(name)
