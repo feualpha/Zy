@@ -12,7 +12,6 @@ import (
   "go/build"
   "log"
   "net/http"
-	"path/filepath"
 	"text/template"
 )
 
@@ -43,22 +42,15 @@ func myAuthFunc(username, password string) bool {
   return q_password == hashed_pass
 }
 
-func homeHandler(c http.ResponseWriter, req *http.Request) {
-	homeTempl.Execute(c, req.Host)
-}
-
 func main() {
 	flag.Parse()
-	homeTempl = template.Must(template.ParseFiles(filepath.Join(*assets, "home.html")))
   swtch := newSwitcher();
   go swtch.run()
 
   authOpts := httpauth.AuthOptions{ AuthFunc: myAuthFunc }
 
   r := mux.NewRouter()
-  r.HandleFunc("/", homeHandler)
-  r.Handle("/ws", wsHandler{s: swtch, race:false})
-  r.Handle("/wsc", wsHandler{s: swtch, race:true})
+  r.Handle("/wsc", wsHandler{s: swtch})
   http.Handle("/", httpauth.BasicAuth(authOpts)(r))
   http.HandleFunc("/cregister", registerHandler)
 

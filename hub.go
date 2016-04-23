@@ -9,15 +9,10 @@ type mesg struct {
 	id *connection
 }
 
-type client struct {
-	id *connection
-	race bool
-}
-
 type hub struct {
 	connections map[*connection]bool
 	broadcast   chan *mesg
-	register    chan *client
+	register    chan *connection
 	unregister  chan *connection
 	live        chan bool
 	special     bool
@@ -26,7 +21,7 @@ type hub struct {
 func newHub(special bool) *hub {
 	return &hub{
 		broadcast:   make(chan *mesg),
-		register:    make(chan *client),
+		register:    make(chan *connection),
 		unregister:  make(chan *connection),
 		connections: make(map[*connection]bool),
 		live: make(chan bool),
@@ -50,7 +45,7 @@ func (h *hub) run(name string ,clear chan string) {
 	for live {
 		select {
 		case c := <-h.register:
-			h.connections[c.id] = c.race
+			h.connections[c] = true
 		case c := <-h.unregister:
 			unregister(h, c)
 			if will_self_destroy(len(h.connections), h.special){

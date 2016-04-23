@@ -15,7 +15,6 @@ var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
 
 type wsHandler struct {
 	s *switcher
-  race bool
 }
 
 type connection struct {
@@ -67,7 +66,7 @@ func (wsh wsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
   room := get_room(wsh.s, r.Header.Get("X-Room"))
 	c := &connection{send: make(chan []byte, 256), ws: ws, h: room}
-	c.h.register <- &client{id: c, race: wsh.race}
+	c.h.register <- c
 	defer func() { c.h.unregister <- c }()
 
 	go c.writer()
