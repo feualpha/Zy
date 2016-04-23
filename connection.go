@@ -5,14 +5,14 @@
 package main
 
 import (
-  "net/http"
   "github.com/gorilla/websocket"
+  "net/http"
 )
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
 
 type wsHandler struct {
-	h *hub
+	s *switcher
   race bool
 }
 
@@ -43,14 +43,31 @@ func (c *connection) writer() {
 	c.ws.Close()
 }
 
+func wait_room(s *switcher) *hub{
+  y := newSwitchAgent("hai")
+  var room *hub
+  s.join <- *y
+
+  select {
+  case h := <- y.room:
+    room = h
+    break
+  }
+
+  return room
+}
+
 func (wsh wsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
-	c := &connection{send: make(chan []byte, 256), ws: ws, h: wsh.h}
+
+  room := wait_room(wsh.s)
+	c := &connection{send: make(chan []byte, 256), ws: ws, h: room}
 	c.h.register <- &client{id: c, race: wsh.race}
 	defer func() { c.h.unregister <- c }()
+
 	go c.writer()
 	c.reader()
 }

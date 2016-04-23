@@ -50,15 +50,15 @@ func homeHandler(c http.ResponseWriter, req *http.Request) {
 func main() {
 	flag.Parse()
 	homeTempl = template.Must(template.ParseFiles(filepath.Join(*assets, "home.html")))
-	h := newHub()
-	go h.run()
+  swtch := newSwitcher();
+  go swtch.run()
 
   authOpts := httpauth.AuthOptions{ AuthFunc: myAuthFunc }
 
   r := mux.NewRouter()
   r.HandleFunc("/", homeHandler)
-  r.Handle("/ws", wsHandler{h: h, race:false})
-  r.Handle("/wsc", wsHandler{h: h, race:true})
+  r.Handle("/ws", wsHandler{s: swtch, race:false})
+  r.Handle("/wsc", wsHandler{s: swtch, race:true})
   http.Handle("/", httpauth.BasicAuth(authOpts)(r))
   http.HandleFunc("/cregister", registerHandler)
 
