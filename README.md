@@ -4,5 +4,4 @@ Zy - a simple websocket chat server implemented in go.
 ###TODO
 - Test
 - Switch Room
-- JSON format
 - Standard Way

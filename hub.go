@@ -4,16 +4,25 @@
 
 package main
 
-import "fmt"
-
-type mesg struct {
+type broadcast_message struct {
 	body []byte
 	id *connection
 }
 
+//this type is contract between client and server
+//server message_receive --> client message_send
+type message_receive struct {
+	Body []byte
+}
+//server message_send --> client message_client
+type message_send struct {
+	Sender []byte
+	Body []byte
+}
+//////////////////////////////////////////////////
 type hub struct {
 	connections map[*connection]bool
-	broadcast   chan *mesg
+	broadcast   chan *broadcast_message
 	register    chan *connection
 	unregister  chan *connection
 	live        chan bool
@@ -22,7 +31,7 @@ type hub struct {
 
 func newHub(special bool) *hub {
 	return &hub{
-		broadcast:   make(chan *mesg),
+		broadcast:   make(chan *broadcast_message),
 		register:    make(chan *connection),
 		unregister:  make(chan *connection),
 		connections: make(map[*connection]bool),
@@ -42,9 +51,13 @@ func will_self_destroy(count int, special bool) bool {
 	return !((count==0) || special)
 }
 
-func message_composer(name string, body []byte) []byte {
-	message := fmt.Sprintf("%s: %s", name, string(body))
-	return []byte(message)
+func send_message(c *connection, h *hub, mesg *message_send){
+	select {
+	case c.send <- mesg:
+	default:
+		delete(h.connections, c)
+		close(c.send)
+	}
 }
 
 func (h *hub) run(name string ,clear chan string) {
@@ -59,19 +72,13 @@ func (h *hub) run(name string ,clear chan string) {
 				clear <-(name)
 			}
 		case m := <-h.broadcast:
-			for c, v := range h.connections {
-				if v && (c == m.id) {
+			mesg := &message_send{Sender: m.id.name, Body:m.body}
+			for c,_ := range h.connections {
+				if c == m.id {
 					continue
-				}
-
-				message := message_composer(m.id.name, m.body)
-
-				select {
-				case c.send <- message:
-				default:
-					delete(h.connections, c)
-					close(c.send)
-				}
+				} else {
+					send_message(c, h, mesg)
+			  }
 			}
 		case l := <-h.live:
 			// close connection?

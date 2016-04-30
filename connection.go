@@ -5,8 +5,9 @@
 package main
 
 import (
+  "bytes"
   "encoding/base64"
-  "github.com/gorilla/websocket"
+  "github.com/gorilla/websocket"  
   "net/http"
   "strings"
 )
@@ -19,25 +20,26 @@ type wsHandler struct {
 
 type connection struct {
 	ws   *websocket.Conn
-	send chan []byte
+	send chan *message_send
 	h    *hub
-  name string
+  name []byte
 }
 
 func (c *connection) reader() {
 	for {
-		_, message, err := c.ws.ReadMessage()
+    message := new(message_receive)
+		err := c.ws.ReadJSON(message)
 		if err != nil {
 			break
 		}
-		c.h.broadcast <- &mesg{body: message, id: c}
+		c.h.broadcast <- &broadcast_message{body: message.Body, id: c}
 	}
 	c.ws.Close()
 }
 
 func (c *connection) writer() {
 	for message := range c.send {
-		err := c.ws.WriteMessage(websocket.TextMessage, message)
+		err := c.ws.WriteJSON(message)
 		if err != nil {
 			break
 		}
@@ -59,12 +61,10 @@ func get_room(s *switcher,id string) *hub{
   return room
 }
 
-func get_username(auth_header string) string {
+func get_username(auth_header string) []byte {
   encoded :=  strings.Split(auth_header, " ")
   decoded,_ := base64.StdEncoding.DecodeString(encoded[1])
-  n := len(decoded)
-  userpass := string(decoded[:n])
-  username := strings.Split(userpass, ":")
+  username := bytes.Split(decoded, []byte(":"))
 
   return username[0]
 }
@@ -77,7 +77,7 @@ func (wsh wsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   name := get_username(r.Header.Get("Authorization"))
   room := get_room(wsh.s, r.Header.Get("X-Room"))
 
-	c := &connection{send: make(chan []byte, 256), ws: ws, h: room, name: name}
+	c := &connection{send: make(chan *message_send), ws: ws, h: room, name: name}
 	c.h.register <- c
 	defer func() { c.h.unregister <- c }()
 
