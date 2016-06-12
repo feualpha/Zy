@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	port = flag.String("port", ":8080", "port")
+	port = flag.String("port", "8080", "port")
 )
 
 func encryptPass(password string) string {
@@ -54,7 +54,8 @@ func main() {
   http.Handle("/", httpauth.BasicAuth(authOpts)(r))
   http.HandleFunc("/cregister", registerHandler)
 
-	if err := http.ListenAndServe(*port, nil); err != nil {
+
+	if err := http.ListenAndServe((":"+*port), nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
 }
