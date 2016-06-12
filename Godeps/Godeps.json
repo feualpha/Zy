@@ -1,0 +1,33 @@
+{
+	"ImportPath": "Zy",
+	"GoVersion": "go1.5",
+	"GodepVersion": "v74",
+	"Deps": [
+		{
+			"ImportPath": "github.com/goji/httpauth",
+			"Rev": "fc389c3003535723411032f2e9300889389e30fa"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Rev": "0eeaf8392f5b04950925b8a69fe70f110fa7cbfc"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Rev": "a622679ebd7a3b813862379232f645f8e690e43f"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Comment": "v1.1.0-53-gaeb3180",
+			"Rev": "aeb3180df56de252b6cfcd64985272010c920ab7"
+		},
+		{
+			"ImportPath": "github.com/subosito/gotenv",
+			"Comment": "v1.0.0",
+			"Rev": "61aa1800e632021fa192da0379ddb78bbd5390d9"
+		}
+	]
+}
