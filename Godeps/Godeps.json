@@ -21,8 +21,8 @@
 		},
 		{
 			"ImportPath": "github.com/mattn/go-sqlite3",
-			"Comment": "v1.1.0-53-gaeb3180",
-			"Rev": "aeb3180df56de252b6cfcd64985272010c920ab7"
+			"Comment": "v1.1.0-69-g38ee283",
+			"Rev": "38ee283dabf11c9cbdb968eebd79b1fa7acbabe6"
 		},
 		{
 			"ImportPath": "github.com/subosito/gotenv",
