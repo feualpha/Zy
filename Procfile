@@ -1,1 +1,1 @@
-web: zy-chatserver
+web: Zy
